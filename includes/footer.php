@@ -18,3 +18,17 @@
         <span class="text-muted">© 2024 - Sistema de Gestión de Documentos</span>
     </div>
 </footer>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.querySelector('.sidebar');
+        const toggleButton = document.querySelector('.navbar-toggler');
+
+        if (toggleButton && sidebar) {
+            toggleButton.addEventListener('click', function() {
+                sidebar.classList.toggle('d-none');
+            });
+        }
+    });
+</script>
+</body>
+</html>
