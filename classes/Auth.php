@@ -28,8 +28,8 @@ class Auth {
             echo "Usuario no encontrado.";
         }
         if ($user = $result->fetch_assoc()) {
-
-            if (password_verify($password, $user['CONTRASENA'])) {
+            $hashed = hash('sha256', $password);
+            if (password_verify($password, $user['CONTRASENA']) || $hashed === $user['CONTRASENA']) {
                 // Actualizar último login
                 $updateStmt = $this->db->prepare("UPDATE USUARIOS SET ULTIMO_LOGIN = CURRENT_TIMESTAMP WHERE ID = ?");
                 $updateStmt->bind_param("i", $user['ID']);

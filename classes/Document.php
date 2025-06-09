@@ -102,7 +102,7 @@ class Document {
     }
 
     public function getAllByUser($usuario_id) {
-        $sql = "SELECT d.*, td.DESCRIPCION as TIPO_DOCUMENTO, a.NOMBRE as AREA, 
+        $sql = "SELECT d.*, td.DESCRIPCION as TIPO_DOCUMENTO, a.NOMBRE as AREA,
                 ta.DESCRIPCION as TIPO_ARCHIVO, u.NOMBRE as USUARIO
                 FROM DOCUMENTOS d
                 JOIN TIPOS_DOCUMENTO td ON d.TIPO_DOCUMENTO_ID = td.ID
@@ -116,6 +116,71 @@ class Document {
         $stmt->bind_param("i", $usuario_id);
         $stmt->execute();
         return $stmt->get_result();
+    }
+
+    public function update($id, $data, $file = null) {
+        try {
+            $sql = "UPDATE DOCUMENTOS SET TIPO_DOCUMENTO_ID = ?, AREA_ID = ?, TIPO_ARCHIVO_ID = ? WHERE ID = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bind_param(
+                "iiii",
+                $data['tipo_documento_id'],
+                $data['area_id'],
+                $data['tipo_archivo_id'],
+                $id
+            );
+            if (!$stmt->execute()) {
+                return false;
+            }
+
+            if ($file) {
+                // Eliminar archivo anterior
+                $stmt = $this->db->prepare("SELECT RUTA FROM DOCUMENTOS WHERE ID = ?");
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                if ($row = $result->fetch_assoc()) {
+                    if (file_exists($row['RUTA'])) {
+                        unlink($row['RUTA']);
+                    }
+                }
+
+                // Guardar nuevo archivo
+                $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+                $nombre_generado = uniqid() . '_' . time() . '.' . $extension;
+                $upload_dir = '../assets/uploads/';
+                $ruta_completa = $upload_dir . $nombre_generado;
+                if (!file_exists($upload_dir)) {
+                    mkdir($upload_dir, 0777, true);
+                }
+                if (!move_uploaded_file($file['tmp_name'], $ruta_completa)) {
+                    return false;
+                }
+                $stmt = $this->db->prepare("UPDATE DOCUMENTOS SET NOMBRE_ORIGINAL = ?, NOMBRE_GENERADO = ?, RUTA = ?, EXTENSION = ? WHERE ID = ?");
+                $stmt->bind_param("sssii", $file['name'], $nombre_generado, $ruta_completa, $extension, $id);
+                $stmt->execute();
+            }
+
+            return true;
+        } catch (Exception $e) {
+            error_log($e->getMessage());
+            return false;
+        }
+    }
+
+    public function delete($id) {
+        $stmt = $this->db->prepare("SELECT RUTA FROM DOCUMENTOS WHERE ID = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($row = $result->fetch_assoc()) {
+            if (file_exists($row['RUTA'])) {
+                unlink($row['RUTA']);
+            }
+        }
+        $stmt = $this->db->prepare("DELETE FROM DOCUMENTOS WHERE ID = ?");
+        $stmt->bind_param("i", $id);
+        return $stmt->execute();
     }
 
     // Getters
