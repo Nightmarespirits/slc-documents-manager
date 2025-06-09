@@ -102,7 +102,7 @@ class Document {
     }
 
     public function getAllByUser($usuario_id) {
-        $sql = "SELECT d.*, td.DESCRIPCION as TIPO_DOCUMENTO, a.NOMBRE as AREA, 
+        $sql = "SELECT d.*, td.DESCRIPCION as TIPO_DOCUMENTO, a.NOMBRE as AREA,
                 ta.DESCRIPCION as TIPO_ARCHIVO, u.NOMBRE as USUARIO
                 FROM DOCUMENTOS d
                 JOIN TIPOS_DOCUMENTO td ON d.TIPO_DOCUMENTO_ID = td.ID
@@ -116,6 +116,32 @@ class Document {
         $stmt->bind_param("i", $usuario_id);
         $stmt->execute();
         return $stmt->get_result();
+    }
+
+    public function update($id, $data) {
+        $sql = "UPDATE DOCUMENTOS SET TIPO_DOCUMENTO_ID = ?, AREA_ID = ?, ULTIMA_EDICION = CURRENT_TIMESTAMP WHERE ID = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param("iii", $data['tipo_documento_id'], $data['area_id'], $id);
+        return $stmt->execute();
+    }
+
+    public function delete($id) {
+        $stmt = $this->db->prepare("SELECT RUTA FROM DOCUMENTOS WHERE ID = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($row = $result->fetch_assoc()) {
+            $ruta = $row['RUTA'];
+            $del = $this->db->prepare("DELETE FROM DOCUMENTOS WHERE ID = ?");
+            $del->bind_param("i", $id);
+            if ($del->execute()) {
+                if (file_exists($ruta)) {
+                    unlink($ruta);
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
     // Getters

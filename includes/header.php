@@ -38,17 +38,4 @@
         }
     </style>
 </head>
-
 <body>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const sidebar = document.querySelector('.sidebar');
-        const toggleButton = document.querySelector('.navbar-toggler');
-
-        toggleButton.addEventListener('click', function() {
-            sidebar.classList.toggle('d-none');
-        });
-    });
-</script>
-
-    </body>
